@@ -1,3 +1,11 @@
+#
+#  generate_data.py
+#  Advanced Data Structure
+#
+#  Created by Generative AI (DeepSeek) on 3/4/25.
+#
+
+
 import numpy as np
 
 def generate_dataset(n: int, dataset_type: str = "random", max_val: int = 1000) -> np.ndarray:
@@ -35,22 +43,35 @@ def generate_dataset(n: int, dataset_type: str = "random", max_val: int = 1000) 
 
 def generate_operations(n: int, num_ops: int = 1000, 
                        query_ratio: float = 0.7, 
-                       max_query_range: int = 100) -> list:
+                       max_query_range: int = 100,
+                       query_type: str = "sum") -> list:
     """
-    Generate a workload of operations (updates and queries).
+    Generate a workload of operations (updates or queries).
     
     Args:
         n: Size of the dataset (for valid indices).
         num_ops: Total number of operations to generate.
         query_ratio: Fraction of operations that are queries (vs updates).
         max_query_range: Maximum range size for queries.
+        query_type: Type of query to generate ("sum" or "max").
     
     Returns:
         List of operations formatted as dictionaries.
         Example: {"type": "query_sum", "l": 5, "r": 10}
     """
+    if query_type not in ["sum", "max"]:
+        raise ValueError("query_type must be 'sum' or 'max'")
+    
     # Generate operation types
-    op_types = np.random.choice(["query", "update"], size=num_ops, p=[query_ratio, 1 - query_ratio])
+    if query_ratio == 1.0:
+        # Generate only queries
+        op_types = np.full(num_ops, "query")
+    elif query_ratio == 0.0:
+        # Generate only updates
+        op_types = np.full(num_ops, "update")
+    else:
+        # Generate a mix of queries and updates
+        op_types = np.random.choice(["query", "update"], size=num_ops, p=[query_ratio, 1 - query_ratio])
     
     # Initialize lists to store operations
     ops = []
@@ -61,11 +82,10 @@ def generate_operations(n: int, num_ops: int = 1000,
     if num_queries > 0:
         query_l = np.random.randint(0, n, size=num_queries)
         query_r = np.minimum(query_l + np.random.randint(1, max_query_range, size=num_queries), n-1)
-        query_types = np.random.choice(["sum", "max"], size=num_queries)
         
         for i in range(num_queries):
             ops.append({
-                "type": f"query_{query_types[i]}",
+                "type": f"query_{query_type}",  # Only generate the specified query type
                 "l": int(query_l[i]),
                 "r": int(query_r[i])
             })

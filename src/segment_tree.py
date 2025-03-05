@@ -1,3 +1,11 @@
+#
+#  segment_tree.py
+#  Advanced Data Structure
+#
+#  Created by Generative AI (DeepSeek) on 3/4/25.
+#
+
+
 import numpy as np
 from tqdm import tqdm
 

@@ -1,3 +1,11 @@
+#
+#  sparse_table.py
+#  Advanced Data Structure
+#
+#  Created by Generative AI (DeepSeek) on 3/4/25.
+#
+
+
 import numpy as np
 import math
 from tqdm import tqdm
