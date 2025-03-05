@@ -8,6 +8,7 @@
 import numpy as np
 import math
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 class SparseTable:
     def __init__(self, data: np.ndarray):
@@ -18,25 +19,40 @@ class SparseTable:
             data (np.ndarray): Input array to build the Sparse Table.
         """
         self.n = len(data)
-        self.k = math.floor(math.log2(self.n)) + 1  # Number of levels
-        self.st = np.zeros((self.k, self.n), dtype=data.dtype)  # Sparse Table
+        self.k = math.floor(math.log2(self.n)) + 1
+        self.st = np.zeros((self.k, self.n), dtype=data.dtype)
         
-        # Calculate total number of iterations for progress bar
-        total_iterations = sum(self.n - (1 << j) + 1 for j in range(1, self.k))
+        # Fill the first level (j=0)
+        self.st[0] = data
         
-        # Initialize progress bar
-        with tqdm(total=total_iterations, desc="Initializing Sparse Table", leave=False) as pbar:
-            # Fill the first level (j=0)
-            self.st[0] = data  # Base level contains the original data
-            
-            # Fill subsequent levels (j=1 to k-1)
+        # Use multi-processing to fill subsequent levels (j=1 to k-1)
+        with ProcessPoolExecutor() as executor:
+            futures = []
             for j in range(1, self.k):
-                i = 0
-                while i + (1 << j) <= self.n:
-                    # Compute max for the current range [i, i + 2^j - 1]
-                    self.st[j, i] = max(self.st[j-1, i], self.st[j-1, i + (1 << (j-1))])
-                    i += 1
-                    pbar.update(1)  # Update progress bar
+                futures.append(executor.submit(self._fill_level, j, self.st))
+            
+            # Track progress with tqdm
+            with tqdm(total=self.k - 1, desc="Initializing Sparse Table", leave=False) as pbar:
+                for future in as_completed(futures):
+                    self.st = future.result()  # Update the table with results
+                    pbar.update(1)
+
+    def _fill_level(self, j: int, st: np.ndarray):
+        """
+        Fill a single level of the Sparse Table.
+        
+        Args:
+            j (int): Level to fill.
+            st (np.ndarray): The Sparse Table array.
+        
+        Returns:
+            np.ndarray: Updated Sparse Table.
+        """
+        i = 0
+        while i + (1 << j) <= self.n:
+            st[j, i] = max(st[j-1, i], st[j-1, i + (1 << (j-1))])
+            i += 1
+        return st
 
     def query_max(self, l: int, r: int) -> int:
         """
