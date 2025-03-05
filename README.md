@@ -1,4 +1,4 @@
-# Login Checker Program - COSC 520 Assignment 2
+# Advanced Data Structures - COSC 520 Assignment 2
 
 This project implements and benchmarks three advanced data structures: **Fenwick Tree**, **Segment Tree**, and **Sparse Table**. 
 
@@ -125,7 +125,7 @@ Update results plotted and saved to 'update_results.png'.
 Query results plotted and saved to 'query_results.png'.
 ```
 
-After running in the **full** mode, two plots `update_results.png` and `query_results.png` will be generated under the current working directory.
+After running in the **full** mode, two plots `update_results.png` and `query_results.png` will be saved to the current working directory.
 
 ---
 
