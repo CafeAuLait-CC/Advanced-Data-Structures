@@ -8,7 +8,6 @@
 import numpy as np
 import math
 from tqdm import tqdm
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 class SparseTable:
     def __init__(self, data: np.ndarray):
@@ -25,34 +24,15 @@ class SparseTable:
         # Fill the first level (j=0)
         self.st[0] = data
         
-        # Use multi-processing to fill subsequent levels (j=1 to k-1)
-        with ProcessPoolExecutor() as executor:
-            futures = []
+        # Initialize progress bar for levels
+        with tqdm(total=self.k - 1, desc="Initializing Sparse Table", leave=False) as pbar:
             for j in range(1, self.k):
-                futures.append(executor.submit(self._fill_level, j, self.st))
-            
-            # Track progress with tqdm
-            with tqdm(total=self.k - 1, desc="Initializing Sparse Table", leave=False) as pbar:
-                for future in as_completed(futures):
-                    self.st = future.result()  # Update the table with results
-                    pbar.update(1)
+                # Calculate the maximum i for current j
+                max_i = self.n - (1 << j)
+                for i in range(max_i + 1):
+                    self.st[j, i] = max(self.st[j-1, i], self.st[j-1, i + (1 << (j-1))])
+                pbar.update(1)
 
-    def _fill_level(self, j: int, st: np.ndarray):
-        """
-        Fill a single level of the Sparse Table.
-        
-        Args:
-            j (int): Level to fill.
-            st (np.ndarray): The Sparse Table array.
-        
-        Returns:
-            np.ndarray: Updated Sparse Table.
-        """
-        i = 0
-        while i + (1 << j) <= self.n:
-            st[j, i] = max(st[j-1, i], st[j-1, i + (1 << (j-1))])
-            i += 1
-        return st
 
     def query_max(self, l: int, r: int) -> int:
         """
@@ -69,3 +49,4 @@ class SparseTable:
         k = math.floor(math.log2(length))  # Find the largest power of 2 <= length
         # Compute max of two overlapping ranges covering [l, r]
         return max(self.st[k, l], self.st[k, r - (1 << k) + 1])
+
